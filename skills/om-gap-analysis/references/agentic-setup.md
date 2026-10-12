@@ -35,10 +35,10 @@ The skill's own `platform` section (all optional in the file; the values the run
 | `platform.companionRepo` | owner/name | the platform's knowledge → none | A second repository where shipped capabilities also live (an extensions or modules repository). A merged capability there is real coverage. |
 | `platform.specsPath` | path, or colon-separated paths | the platform's knowledge → `.ai/specs` | Where planned specs live inside the platform repository. |
 | `platform.checkoutCandidates` / `platform.companionCheckoutCandidates` | colon-separated paths | none | Local checkouts to reuse instead of cloning. |
-| `platform.cloneUrl` / `platform.companionCloneUrl` | git URL | `https://github.com/<repo>.git` | Clone URLs when the default shape does not apply. |
+| `platform.cloneUrl` / `platform.companionCloneUrl` | git URL | absent | Clone URLs used only when the managed checkout must be created. Required for auto-provisioning because the repository host is not inferred from an `owner/name` value. |
 | `platform.tierMap` | array of `{pathPrefix, tier}` | the `License tiers` table of the platform's knowledge → no tiers | The license-tier boundary map feeding `--tier-map`. |
 | `platform.significantPrAdditions` | integer | unset → the review-state half of the significance trigger alone | The calibrated size threshold for a significant open PR (see `references/synthesis.md`). |
-| `knowledge.sources` | array | absent → the repository `AGENTS.md` only | The shared knowledge-source slot: `{ "path": … }` entries are repo-owned knowledge, `{ "dependency": …, "files": [...] }` entries are knowledge shipped inside an installed dependency. Resolution in `references/platform-knowledge.md`. |
+| `knowledge.sources` | array | absent → repository guidance fallback | Defined by the `om-framework-context` skill and consumed per `references/platform-knowledge.md`; invoke that skill when installed, otherwise use its bounded standalone fallback. |
 
 ```bash
 CONFIG=.ai/agentic.config.json

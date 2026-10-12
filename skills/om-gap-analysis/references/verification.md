@@ -1,6 +1,6 @@
 # Phase 2 — Verification (the gated batch loop)
 
-The full Phase-2 procedure: for every `status: pending` story, dispatch a read-only subagent to investigate the platform, then **gate** its findings before writing them into the MD. `<skill-dir>` below is this skill's install directory; run every command from the repository root.
+The full Phase-2 procedure: for every `status: pending` story, run a bounded read-only investigator (a subagent when available, otherwise the sequential fallback below), then **gate** its findings before writing them into the MD. `<skill-dir>` below is this skill's install directory; run every command from the repository root.
 
 ## Preconditions (all three, in order)
 
@@ -27,8 +27,9 @@ The full Phase-2 procedure: for every `status: pending` story, dispatch a read-o
 
 ## Architecture: orchestrator + subagents + gate
 
-- **You are the orchestrator.** You parse the MD, dispatch the investigation subagents in one message, **validate each returned block through `bin/gap-validate-finding`**, edit the MD, update statuses. You do **not** explore the codebase yourself.
+- **You are the orchestrator.** You parse the MD, dispatch the investigation subagents in one message, **validate each returned block through `bin/gap-validate-finding`**, edit the MD, update statuses. In a runtime with delegation, you do **not** explore the codebase yourself.
 - **Subagents** are read-only investigators (one story each). They do not edit files. They propose the grounding query; they do not need to be trusted on whether they ran it.
+- **Sequential fallback** — when the runtime has no subagent facility, process one story at a time with the same prompt and only its declared inputs. Temporarily act as the read-only investigator, write its candidate block to scratch, then return to the orchestrator role and run the external gate before editing the tree. Mark progress `Execution: sequential fallback`; do not skip stories, widen inputs, or let the ungated candidate block update source state.
 - **The gate** (`bin/gap-validate-finding`) is the structural surface *outside each subagent's model loop*. This is load-bearing: prose rules in a subagent prompt do **not** bind it against fabrication-shape failures. The gate must verify the *goal* (a story-grounded verdict), not a *proxy* (a query↔verdict agreement a strawman query satisfies) — the `--story` token guard re-ties it to the goal.
 
 ## Steps
@@ -50,7 +51,7 @@ The full Phase-2 procedure: for every `status: pending` story, dispatch a read-o
 
 2. **Load the MD.** Parse frontmatter + tree. List `status: pending` stories. Set `phase: 2-verifying`.
 
-3. **Dispatch all `pending` investigation subagents in one message.** No hand-counted batching — the agent runtime bounds its own concurrency. Each subagent gets one story (the prompt template in `references/subagent-prompt.md`) and returns a findings block in that template's schema.
+3. **Run every pending investigation.** With subagents, dispatch all `pending` investigators in one message — no hand-counted batching; the runtime bounds its own concurrency. Each gets one story (the prompt template in `references/subagent-prompt.md`) and returns a findings block in that template's schema. Without subagents, use the sequential fallback above in story order and gate each candidate before starting the next story.
 
 4. **Gate the returned blocks — one at a time — before writing each.** For each, write the story's title + acceptance criteria to a temp file and pass it with `--story`; pass `<REPO_ROOT>` with `--repo-root`, `<COMPANION_ROOT>` with `--companion-root` whenever it isn't `UNAVAILABLE`, and the tier map (the one resolved in step 0 from `platform.tierMap` or the platform's `License tiers` knowledge, materialized as a `<path-prefix> <tier>` lines file) with `--tier-map`:
 

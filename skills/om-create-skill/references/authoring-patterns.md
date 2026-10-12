@@ -1,5 +1,10 @@
 # Authoring patterns — what goes into a skill and how to shape it
 
+This reference is derived in part from Anthropic's
+[`skill-creator`](https://github.com/anthropics/skills/tree/main/skills/skill-creator)
+guidance (Copyright 2026 Anthropic, PBC), licensed under the
+[Apache License 2.0](https://github.com/anthropics/skills/blob/main/skills/skill-creator/LICENSE.txt).
+
 Generic skill-design guidance `om-create-skill` applies in author mode (steps 1–3
 of `references/author-workflow.md`). It complements `references/philosophy.md`:
 that file decides *which layer* a fragment belongs to; this one decides *whether

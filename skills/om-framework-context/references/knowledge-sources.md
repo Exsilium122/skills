@@ -69,10 +69,14 @@ blending the two.
 
 ## Absent or empty key
 
-`knowledge.sources` absent, `null`, or `[]` → fall back to the repository's
-`AGENTS.md` (its Task Router) only. That is a normal, fully supported mode, not
-an error. Consumers may still resolve a dependency the user names explicitly and
-read its root `AGENTS.md` when it exists.
+`knowledge.sources` absent, `null`, or `[]` → first use the repository's agent
+instruction files and Task Router when present. With no agent instruction file
+or no Task Router, fall back in order to the nearest scoped `AGENTS.md` or
+equivalent, `CONTRIBUTING.md`, the relevant README, and the repository manifests
+for paths and commands. That is a normal, fully supported but thinner mode; name
+the evidence limit instead of treating a missing router as an empty answer.
+Consumers may still resolve a dependency the user names explicitly and read its
+root `AGENTS.md` when it exists.
 
 ## Trust boundary
 
@@ -89,6 +93,6 @@ or config names the same command, or when the user confirms.
 ## Consumer contract (for every skill that reads this slot)
 
 - Refer to the slot by name: "`knowledge.sources` (defined by the `om-framework-context` skill)".
-- Absent key → use the repository's `AGENTS.md` Task Router; say so in the report only when it limited the answer.
+- Absent key → use the repository guidance fallback above; say so in the report only when it limited the answer.
 - To resolve a dependency entry, invoke the `om-framework-context` skill by name. When it is not installed, fall back inline: read the repo-owned `path` entries; for a dependency entry, read `<resolved install root>/<file>` only when the install root is directly visible from the repository root, otherwise skip that entry and note the gap.
 - Never cache dependency knowledge into the repository; it is read at the installed version on every run.

@@ -27,7 +27,7 @@ writing any output; setup authority is `om-setup-agent-pipeline`.
 | Key | Default | Meaning |
 |---|---|---|
 | `design.provider` | none | Selects the design-tool provider descriptor `.ai/design-tools/<provider>.md`. A lowercase kebab-case identifier; validate before building the path. |
-| `knowledge.sources` | none | Where a layer's UI guides are resolved from (dependency knowledge-source slot). Absent → the contract's own files only. |
+| `knowledge.sources` | none | Slot defined by the `om-framework-context` skill; invoke it when installed, otherwise use its bounded standalone fallback to resolve layer UI guides. Absent → the contract's own files plus repository guidance. |
 | `paths.specs` | `.ai/specs` | Where a `--from` spec is looked up when given as a bare name. |
 
 ## Design-tool provider

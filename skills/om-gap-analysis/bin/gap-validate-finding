@@ -365,9 +365,9 @@ local_search() {
   local root="$1" query="$2"
   local content_out content_rc path_hit
   if command -v rg >/dev/null 2>&1; then
-    content_out="$(rg --no-messages -il -- "$query" "$root" 2>&1)"; content_rc=$?
+    content_out="$(rg --no-messages -Fil -- "$query" "$root" 2>&1)"; content_rc=$?
   else
-    content_out="$(git -C "$root" grep -riIl -- "$query" 2>&1)"; content_rc=$?
+    content_out="$(git -C "$root" grep -FriIl -- "$query" 2>&1)"; content_rc=$?
   fi
   if [ "$content_rc" -eq 0 ]; then
     printf '%s\n' "$content_out"
@@ -377,7 +377,7 @@ local_search() {
     printf '%s\n' "$content_out"
     return "$content_rc"
   fi
-  path_hit="$(git -C "$root" ls-files 2>/dev/null | grep -i -- "$query" | head -1)"
+  path_hit="$(git -C "$root" ls-files 2>/dev/null | grep -Fi -- "$query" | head -1)"
   if [ -n "$path_hit" ]; then
     printf '%s\n' "$path_hit"
     return 0

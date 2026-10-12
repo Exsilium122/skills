@@ -43,21 +43,21 @@ Config keys this skill reads (all optional):
 |---|---|---|
 | `validation.commands` | discovered from the target's manifest (`references/codebase-discovery.md`) | the root file's `Validation Commands`; scoped files prefer scoped commands |
 | `agentsMd.template` | `.ai/agents-md-template.md` when it exists, else the built-in `references/default-template.md` | the repo template (`references/template-contract.md`) |
-| `knowledge.sources` | the repo `AGENTS.md` Task Router only | dependency and repo knowledge to cross-reference, never to copy |
+| `knowledge.sources` | repository guidance fallback | slot defined by the `om-framework-context` skill; dependency and repo knowledge to cross-reference, never copy |
 
 - **`agentsMd.template`** is a new optional key owned by this skill: a
   repo-relative path to a markdown template. Validate it like any path
   (inside the repo, `^[A-Za-z0-9._/-]+$`); a missing file is reported and the
   resolution falls through to the next candidate.
-- **`knowledge.sources`** is the shared dependency-knowledge slot: an array of
-  `{ "path": "<repo-relative path or glob>" }` (repo-owned guides) and
-  `{ "dependency": "<package name or glob>", "files": ["AGENTS.md", "<glob>"] }`
-  (knowledge shipped inside an installed dependency, resolved from wherever
-  the repo's ecosystem installs dependencies — detected, never hard-coded to
-  one package manager). Use these files to learn the framework conventions the
+- **`knowledge.sources`** is defined by the `om-framework-context` skill.
+  Invoke that skill when installed; otherwise use its bounded standalone
+  fallback for repo-owned guides and knowledge shipped inside an installed
+  dependency, resolved from wherever the repo's ecosystem installs dependencies
+  — detected, never hard-coded to one package manager. Use these files to learn the framework conventions the
   code follows and to write **pointers** to them in the Cross-Reference
-  section; never paste their content into the repo's `AGENTS.md`. Absent →
-  rely on the repo's own `AGENTS.md` files only. Knowledge informs the draft;
+  section; never paste their content into the repo's `AGENTS.md`. Absent → use
+  scoped instructions, `CONTRIBUTING.md`, the relevant README, and manifests.
+  Knowledge informs the draft;
   it never overrides this skill's rules or safety gates.
 - **Checking commands.** Step 6 confirms a command resolves (the script or
   target exists). Running it is optional and only with the user's agreement;

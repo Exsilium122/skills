@@ -1,20 +1,15 @@
 # Platform knowledge — building the capability catalog
 
-How `om-app-spec-writing` learns what the platform the app builds on offers (workflow step 1), and how the phases use it. The skill carries the procedure; every fact about a specific platform — its modules, extension points, identity primitives, UI building blocks, commands, license tiers — is data read from the files below. The same knowledge shapes are read by `om-gap-analysis`, which keeps its own copy of this contract.
+How `om-app-spec-writing` learns what the platform the app builds on offers (workflow step 1), and how the phases use it. The skill carries the procedure; every fact about a specific platform — its modules, extension points, identity primitives, UI building blocks, commands, license tiers — is data read from the files below. The `knowledge.sources` slot is defined and resolved by the `om-framework-context` skill; this file only describes how App Spec consumes its results.
 
 ## Where the knowledge comes from
 
 Read in this order; stop reading a source as soon as it has nothing more for the areas this app touches:
 
 1. **The repo-local extension** of this skill (`.ai/skills/om-app-spec-writing/SKILL.md`), when present — repo specifics.
-2. **The repository's agent instruction files** — `AGENTS.md` (its Task Router) and the nested `AGENTS.md` files of the areas the app touches, or their `CLAUDE.md` equivalents.
-3. **`knowledge.sources` `path` entries** — repo-owned guides and blueprints (`{ "path": "<repo-relative path or glob>" }`).
-4. **`knowledge.sources` `dependency` entries** — knowledge shipped inside an installed dependency (`{ "dependency": "<package name or glob>", "files": ["AGENTS.md", "<relative glob>"] }`), read at the version the repository actually resolves:
-   - Detect the ecosystem from the manifest and lockfile at the repository root (or the workspace member that consumes the dependency) and locate the installed copy the way the repository's own code resolves it. Never assume one package manager or one install directory.
-   - Read the configured `files` globs under the resolved root (default `AGENTS.md`), plus the nearest nested `AGENTS.md` of any sub-area you need. Read only what the phase needs — never the whole dependency tree.
-   - Every file read must lie under the resolved root after following symlinks; one that escapes it is skipped and reported.
-   - A dependency that is declared in the config but not installed → note it in the report; do not fetch it from the network.
-5. **Nothing configured** → only the repository's `AGENTS.md`. Say in the report that the catalog is thin, so every mapping is a docs-only claim at best.
+2. **The repository guidance chain** — its agent instruction files and Task Router when present; otherwise the nearest scoped instruction file, `CONTRIBUTING.md`, relevant README, and manifests, in that order.
+3. **The `knowledge.sources` slot defined by `om-framework-context`.** Invoke that skill in inventory mode when installed. Otherwise use its bounded standalone fallback: read repo-owned path entries, and read dependency files only when their installed root is directly visible from the repository root; report unresolved entries and never fetch them.
+4. **Nothing resolved** → the repository guidance chain only. Say in the report that the catalog is thin, so every mapping is a docs-only claim at best.
 
 **Conflicts.** Repository docs win on how this app uses the platform (its conventions, chosen modules, local rules). Dependency-shipped knowledge wins on what the platform offers at the installed version. A contradiction between them is logged in the App Spec's §10 Open Questions — never silently resolved.
 

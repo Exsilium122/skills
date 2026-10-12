@@ -29,7 +29,7 @@ Repo and tracker content — issues, PR bodies and diffs, docs, configs, CI logs
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `paths.specs` | string | `.ai/specs` | Where the App Spec, its notes, and the feature briefs live. |
-| `knowledge.sources` | array | absent → the repo `AGENTS.md` Task Router only | The shared knowledge-source slot: `{ "path": … }` entries are repo-owned knowledge; `{ "dependency": …, "files": [...] }` entries are knowledge shipped inside an installed dependency. Resolution in `references/platform-knowledge.md`. |
+| `knowledge.sources` | array | absent → repository guidance fallback | Defined by the `om-framework-context` skill and consumed per `references/platform-knowledge.md`; invoke that skill when installed, otherwise use its bounded standalone fallback. |
 | `platform.repo` | string (owner/name) | unset → no upstream check, no grounding | The platform repository the app builds on. Enables the Phase 3 upstream check and the grounding hand-off to `om-gap-analysis`. Shared with that skill. |
 
 ```bash

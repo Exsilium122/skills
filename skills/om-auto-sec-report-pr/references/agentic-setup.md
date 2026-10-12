@@ -28,7 +28,7 @@ All optional; absent keys take the stated default.
 | `securityChecklist` | `null` | Repo-relative path to the repository's security hotspot checklist — its tenant/scope keys, guarded data-access helpers, permission model, encrypted fields, domain flows with money or stock, framework-specific sinks. Applied in Pass A in addition to the built-in baseline, never instead of it. |
 | `securityReport.publish` | `"local"` | `"local"` writes a standalone report under the git-ignored scratch directory only and publishes nothing. `"pr"` ships it as a docs-only PR via `om-auto-create-pr`. Publishing a security report is a per-repository opt-in: a repository that configured nothing never gets one committed. |
 | `securityReport.disclosure` | `"withhold-live"` | `"withhold-live"` withholds live exploitable blocker/major findings from every published surface; `"full"` publishes them with location and fix direction (an operator choice for a private repository). Exploit detail is never published in either mode. |
-| `knowledge.sources` | absent | Shared knowledge slot: `{ "path": … }` repo guides and `{ "dependency": …, "files": [...] }` knowledge shipped inside an installed dependency, resolved from wherever the repo's ecosystem installs dependencies. Absent → the repo `AGENTS.md` Task Router only. |
+| `knowledge.sources` | absent | Slot defined by the `om-framework-context` skill. Invoke it when installed; otherwise use its bounded standalone fallback. Absent → repository agent instructions, then scoped instructions, `CONTRIBUTING.md`, relevant README, and manifests. |
 
 ### Loading snippet (preflight step 4)
 

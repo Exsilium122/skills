@@ -13,7 +13,7 @@
 #                             [--candidates <colon-separated paths>]
 #                             [--companion-candidates <colon-separated paths>]
 #                             [--cache-dir <path>]          (default .ai/tmp/om-gap-analysis/checkouts)
-#                             [--clone-url <git url>]       (default https://github.com/<owner/name>.git)
+#                             [--clone-url <git url>]       (required for auto-clone)
 #                             [--companion-clone-url <git url>]
 #
 # All repo/branch values come from the pipeline config (`platform.repo`,
@@ -118,9 +118,28 @@ esac
 SAFE='^[A-Za-z0-9._/-]+$'
 [[ "$REPO" =~ $SAFE ]] || { echo "gap-orientation-preflight: --repo contains unexpected characters" >&2; exit 2; }
 [[ "$BRANCH" =~ $SAFE ]] || { echo "gap-orientation-preflight: --branch contains unexpected characters" >&2; exit 2; }
+has_dot_segment() {
+  case "/$1/" in */../*|*/./*) return 0 ;; *) return 1 ;; esac
+}
+has_dot_segment "$REPO" && { echo "gap-orientation-preflight: --repo may not contain dot path segments" >&2; exit 2; }
+git check-ref-format --branch "$BRANCH" >/dev/null 2>&1 \
+  || { echo "gap-orientation-preflight: --branch is not a safe branch name" >&2; exit 2; }
+has_dot_segment "$BRANCH" && { echo "gap-orientation-preflight: --branch may not contain dot path segments" >&2; exit 2; }
 if [ -n "$COMPANION_REPO" ]; then
   [[ "$COMPANION_REPO" =~ $SAFE ]] || { echo "gap-orientation-preflight: --companion-repo contains unexpected characters" >&2; exit 2; }
+  has_dot_segment "$COMPANION_REPO" && { echo "gap-orientation-preflight: --companion-repo may not contain dot path segments" >&2; exit 2; }
 fi
+REPOSITORY_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)"
+case "$CACHE_DIR" in
+  ''|/*) echo "gap-orientation-preflight: --cache-dir must be a non-empty repository-relative path" >&2; exit 2 ;;
+esac
+[[ "$CACHE_DIR" =~ $SAFE ]] || { echo "gap-orientation-preflight: --cache-dir contains unexpected characters" >&2; exit 2; }
+has_dot_segment "$CACHE_DIR" && { echo "gap-orientation-preflight: --cache-dir may not contain dot path segments" >&2; exit 2; }
+CACHE_DIR="$REPOSITORY_ROOT/$CACHE_DIR"
+mkdir -p "$CACHE_DIR" || { echo "gap-orientation-preflight: cannot create --cache-dir" >&2; exit 2; }
+CACHE_DIR="$(cd "$CACHE_DIR" && pwd -P)" \
+  || { echo "gap-orientation-preflight: cannot resolve --cache-dir" >&2; exit 2; }
+case "$CACHE_DIR/" in "$REPOSITORY_ROOT/"*) : ;; *) echo "gap-orientation-preflight: --cache-dir escaped the repository" >&2; exit 2 ;; esac
 
 is_transient() {
   grep -qiE "rate limit|secondary rate|\b403\b|abuse|timeout|timed out|could not resolve|connection|temporar|try again|network" <<<"$1"
@@ -174,8 +193,6 @@ validate_checkout() {
   orient_path="${explicit_path:-$default_cache}"
   auto_managed=1
   [ -n "$explicit_path" ] && auto_managed=0
-  [ -n "$clone_url" ] || clone_url="https://github.com/$repo.git"
-
   if [ ! -d "$orient_path" ]; then
     if [ "$auto_managed" -eq 0 ]; then
       echo "ORIENTATION PREFLIGHT FAIL [$label:$orient_path]: path does not exist.
@@ -184,6 +201,15 @@ validate_checkout() {
   or unset the path override to let this preflight auto-manage its own checkout." >&2
       return 1
     fi
+    if [ -z "$clone_url" ]; then
+      echo "ORIENTATION PREFLIGHT FAIL [$label:$orient_path]: no clone URL is configured for auto-provisioning.
+  Fix: set platform.cloneUrl (or platform.companionCloneUrl) or pass --clone-url for this code host." >&2
+      return 1
+    fi
+    case "$orient_path" in
+      "$CACHE_DIR"/*) : ;;
+      *) echo "ORIENTATION PREFLIGHT FAIL [$label:$orient_path]: managed checkout escaped the cache directory." >&2; return 1 ;;
+    esac
     mkdir -p "$(dirname "$orient_path")"
     local clone_errfile clone_rc clone_err
     clone_errfile="$(mktemp "${TMPDIR:-/tmp}/gap-orient-clone-err.XXXXXX")"
@@ -191,7 +217,10 @@ validate_checkout() {
     clone_rc=$?
     clone_err="$(cat "$clone_errfile" 2>/dev/null)"; rm -f "$clone_errfile"
     if [ $clone_rc -ne 0 ]; then
-      rm -rf "$orient_path"
+      case "$orient_path" in
+        "$CACHE_DIR"/*) rm -rf -- "$orient_path" ;;
+        *) echo "ORIENTATION PREFLIGHT FAIL [$label:$orient_path]: refusing cleanup outside the cache directory." >&2; return 1 ;;
+      esac
       if is_transient "$clone_err"; then
         echo "ORIENTATION PREFLIGHT RETRY-LATER [$label:$orient_path]: clone of $repo failed transiently: $(head -1 <<<"$clone_err"). Wait ~60s and re-run." >&2
         return 2

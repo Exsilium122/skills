@@ -339,7 +339,7 @@ Four layers of project fit, no forking:
 
 - **Agent instructions** — skills read your `AGENTS.md` / `CLAUDE.md` before working, so project conventions apply from the first run. No such file? [`om-setup-agent-pipeline`](docs/skills/om-setup-agent-pipeline.md) offers a starter.
 - **Generated project docs** — `SDLC.md` (the process doc), `CODE_REVIEW.md` (review rules, auto-applied by [`om-code-review`](docs/skills/om-code-review.md)), `BACKWARD_COMPATIBILITY.md` (protected contract surfaces — reviews flag violations, implementations warn you), and an `AGENTS.md` starter with a task-routing table. [`om-setup-agent-pipeline`](docs/skills/om-setup-agent-pipeline.md) derives each from your repository and only when the file is missing; existing docs are honored as-is.
-- **Repo-local skills** — drop a skill with the same name into your repo at `.ai/skills/<skill-name>/SKILL.md` and it takes precedence over the installed one (details below).
+- **Repo-local skill overlays** — add a constrained delta at `.ai/skills/<skill-name>/SKILL.md`; the installed skill applies it on top of its base workflow, and safety rules always remain in force (details below).
 - **Tracker descriptor** — every issue/PR/label command the skills run lives in one committed file, `.ai/trackers/<tracker>.md`, that you can edit or replace (details below).
 
 ## 🧩 Extending the skills
@@ -350,17 +350,19 @@ Each skill keeps its numbered main algorithm in `SKILL.md` and factors its repea
 
 ### Repo-local skill overrides
 
-Every installed skill checks, right after loading the config, for a repo-local skill of the same name at `.ai/skills/<skill-name>/SKILL.md`. When present, the local skill wins — the installed one follows it instead of its own instructions. To *extend* rather than replace, the local skill just `@`-imports or references the installed skill and adds rules on top:
+Every installed skill checks, right after loading the config, for a repo-local overlay of the same name at `.ai/skills/<skill-name>/SKILL.md`. The overlay is repository-provided configuration applied on top of the installed workflow; it is not a second skill and never replaces the base safety contract. It has no frontmatter, starts with the required banner, names only the base sections it changes, and stays below half the base skill's size:
 
 ```markdown
-<!-- .ai/skills/om-auto-review-pr/SKILL.md -->
-Follow the installed `om-auto-review-pr` skill, plus:
+> **Repo-local override.** Extends the installed `om-auto-review-pr` validation and PR-body checks for this repository.
 
+## Validation step (extend)
 - Also run `pnpm test:e2e` before approving PRs that touch `apps/web`.
+
+## Review body (add)
 - Our PR body template additionally requires a "Screenshots" section for UI changes.
 ```
 
-Local rules win, but a local skill can never relax the installed skill's safety rules (no skipping tests, no `--no-verify`, no force-pushes). This convention is also what makes the collection a drop-in for repos that already keep specialized `om-*` skills under `.ai/skills/`: the installed skills defer to them automatically.
+Local specifics win where they add or replace a named repository-specific step, but an overlay can never relax the installed skill's safety rules (no skipping tests, no `--no-verify`, no force-pushes), widen access, or redirect outputs. Older same-name local files still load for compatibility; normalize them to this overlay shape when touched.
 
 ### Project management (tracker) providers
 

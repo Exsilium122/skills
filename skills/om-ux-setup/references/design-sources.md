@@ -11,7 +11,7 @@ repository actually uses.
 ## Where layers come from
 
 Layers are found only through the optional `knowledge.sources` key in
-`.ai/agentic.config.json` (defined by the dependency knowledge-source slot;
+`.ai/agentic.config.json` (defined by the `om-framework-context` skill;
 entries are `{ "path": … }` or `{ "dependency": …, "files": [ … ] }`, `files`
 defaulting to `["AGENTS.md"]`). Nothing else is searched.
 

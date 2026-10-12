@@ -28,7 +28,7 @@ const MAX_PUBLIC_BUNDLE_BYTES = 30 * 1024 * 1024
 const SHARE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{1,46}[a-z0-9]$/
 const textDecoder = new TextDecoder('utf-8', { fatal: true })
 
-const sensitiveValueKeyPattern = /^(authorization|cookie|set-cookie|password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|access[_-]?token|refresh[_-]?token|private[_-]?key)$/i
+const sensitiveValueKeyPattern = /(?:^|[_-])(?:authorization|cookie|set[_-]?cookie|password|passwd|pwd|secret|client[_-]?secret|api[_-]?key|access[_-]?token|refresh[_-]?token|private[_-]?key|token)(?:$|[_-])/i
 const pseudonymKeyPattern = /^(session[_-]?id|thread[_-]?id|user[_-]?id|account[_-]?id|organization[_-]?id|tenant[_-]?id|git[_-]?branch)$/i
 const pathKeyPattern = /^(cwd|file|filePath|file_path|filename|path)$/i
 const commandKeyPattern = /^(command|cmd|shell)$/i
@@ -111,7 +111,11 @@ function shannonEntropy(value) {
 
 function redactHighEntropy(value, state) {
   return value.replace(/[A-Za-z0-9+/_=-]{32,}/g, (candidate) => {
-    if (/^[a-f0-9]+$/i.test(candidate) || /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(candidate)) return candidate
+    if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(candidate)) return candidate
+    if (/^[a-f0-9]{32,}$/i.test(candidate)) {
+      countReplacement(state, 'secrets')
+      return '«redacted:hex-secret»'
+    }
     if (!/[A-Za-z]/.test(candidate) || !/[0-9]/.test(candidate) || shannonEntropy(candidate) < 4.1) return candidate
     countReplacement(state, 'secrets')
     return '«redacted:high-entropy»'
